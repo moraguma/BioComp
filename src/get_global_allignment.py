@@ -1,5 +1,6 @@
 import numpy as np
 import copy
+import argparse
 
 
 def get_pos_point(a: str, i: int, b: str, j: int, match: int, mismatch: int):
@@ -56,7 +57,7 @@ def dp_align(a: str, m: int, b: str, n: int, gap: int, match: int, mismatch: int
                                scores[i - 1, j - 1] + get_pos_point(a, i - 1, b, j - 1, match, mismatch),
                                scores[i - 1, j] + gap)
     
-    return get_alignments(scores, a, m, b, n, gap, match, mismatch, {})
+    return [scores[m, n], get_alignments(scores, a, m, b, n, gap, match, mismatch, {})]
 
 
 GAP = -5
@@ -64,7 +65,13 @@ MATCH = 3
 MISMATCH = -2
 
 
-a = "ACTGTGCT"
-b = "ATGGTCT"
+parser = argparse.ArgumentParser()
+parser.add_argument("a", help="First sequence to be aligned", type=str)
+parser.add_argument("b", help="Second sequence to be aligned", type=str)
+parser.add_argument("--gap", default=GAP, help="Gap score", type=int)
+parser.add_argument("--match", default=MATCH, help="Match score", type=int)
+parser.add_argument("--mismatch", default=MISMATCH, help="Mismatch score", type=int)
+args = parser.parse_args()
 
-print(dp_align(a, len(a), b, len(b), GAP, MATCH, MISMATCH))
+result = dp_align(args.a, len(args.a), args.b, len(args.b), args.gap, args.match, args.mismatch)
+print(f"Score - {result[0]}\nAlignments - {result[1]}")
