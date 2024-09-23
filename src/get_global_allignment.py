@@ -1,0 +1,70 @@
+import numpy as np
+import copy
+
+
+def get_pos_point(a: str, i: int, b: str, j: int, match: int, mismatch: int):
+    return match if a[i] == b[j] else mismatch
+
+
+def get_alignments(M, a: str, i: int, b: str, j: int, gap: int, match: int, mismatch: int, mem):
+    if i == 0 and j == 0:
+        return [["", ""]]
+    
+    alignments = []
+    if i > 0 and j > 0 and M[i-1, j-1] + get_pos_point(a, i - 1, b, j - 1, match, mismatch) == M[i, j]:
+        if not (i - 1, j - 1) in mem:
+            mem[(i - 1, j - 1)] = get_alignments(M, a, i - 1, b, j - 1, gap, match, mismatch, mem)
+        
+        aux = copy.deepcopy(mem[(i - 1, j - 1)])
+        for k in range(len(aux)):
+            aux[k][0] = aux[k][0] + a[i - 1]
+            aux[k][1] = aux[k][1] + b[j - 1]
+        
+        alignments.extend(aux)
+    if i > 0 and M[i - 1, j] + gap == M[i, j]:
+        if not (i - 1, j) in mem:
+            mem[(i - 1, j)] = get_alignments(M, a, i - 1, b, j, gap, match, mismatch, mem)
+        
+        aux = copy.deepcopy(mem[(i - 1, j)])
+        for k in range(len(aux)):
+            aux[k][0] = aux[k][0] + a[i - 1]
+            aux[k][1] = aux[k][1] + "-"
+        
+        alignments.extend(aux)
+    if j > 0 and M[i, j - 1] + gap == M[i, j]:
+        if not (i, j - 1) in mem:
+            mem[(i, j - 1)] = get_alignments(M, a, i, b, j - 1, gap, match, mismatch, mem)
+        
+        aux = copy.deepcopy(mem[(i, j - 1)])
+        for k in range(len(aux)):
+            aux[k][0] = aux[k][0] + "-"
+            aux[k][1] = aux[k][1] + b[j - 1]
+        
+        alignments.extend(aux)
+    
+    return alignments
+
+
+def dp_align(a: str, m: int, b: str, n: int, gap: int, match: int, mismatch: int):
+    scores = np.zeros((m + 1, n + 1), dtype=np.int16)
+    scores[1:m + 1, 0] = gap * np.arange(1, m + 1)
+    scores[0, 1:n + 1] = gap * np.arange(1, n + 1)
+
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            scores[i, j] = max(scores[i, j - 1] + gap,
+                               scores[i - 1, j - 1] + get_pos_point(a, i - 1, b, j - 1, match, mismatch),
+                               scores[i - 1, j] + gap)
+    
+    return get_alignments(scores, a, m, b, n, gap, match, mismatch, {})
+
+
+GAP = -5
+MATCH = 3
+MISMATCH = -2
+
+
+a = "ACTGTGCT"
+b = "ATGGTCT"
+
+print(dp_align(a, len(a), b, len(b), GAP, MATCH, MISMATCH))
